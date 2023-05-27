@@ -1,11 +1,15 @@
 import os from "node:os";
 import { Cache, environment } from "@raycast/api";
 import Parser from "rss-parser";
-import { CacheBGMEntry, CacheEntry } from "./types";
+import { CacheAPIBGMEntry, CacheBGMEntry, CacheEntry } from "./types";
+import axios from "axios";
 
 const CACHE_DURATION_IN_MS = 10 * 60 * 1_000;
 
 const cache = new Cache();
+const headers = {
+  'User-Agent': `cydia/Bgm.tv Extension, Raycast/${environment.raycastVersion} (${os.type()} ${os.release()})`
+}
 const parser = new Parser({
   headers: {
     "User-Agent": `Bgm.tv Extension, Raycast/${environment.raycastVersion} (${os.type()} ${os.release()})`,
@@ -54,4 +58,26 @@ export async function getBangumiInfo(id: number) {
     cache.set(`BGMItem_${id}`, JSON.stringify({timestamp: Date.now(), item: infoBody}))
 
     return infoBody
+}
+
+export async function getBangumiInfoFromAPI(id: number) {
+  // const cachedResponse = cache.get(`BGMInfoAPI_${id}`)
+  // if (cachedResponse) {
+  //   const parsed: CacheAPIBGMEntry = JSON.parse(cachedResponse);
+
+  //   const elapsed = Date.now() - parsed.timestamp;
+  //   console.log(`BGMItemAPI_${id} cache age: ${elapsed / 1000} seconds`);
+
+  //   if (elapsed <= CACHE_DURATION_IN_MS) {
+  //       return parsed.item;
+  //   }
+  //   else {
+  //     console.log(`Cache expired for BGMItemAPI_${id}`);
+  //   }
+  // }  
+  console.log(`https://api.bgm.tv/v0/subjects/${id}`)
+  const data = await axios.get(`https://api.bgm.tv/v0/subjects/${id}`, {headers})
+  // cache.set(`BGMInfoAPI_${id}`, JSON.stringify({timestamp: Date.now(), item: await data.data}))
+  console.log(data.status)
+  return data.data
 }

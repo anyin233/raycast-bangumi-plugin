@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { ActionPanel, Action, Detail, List } from "@raycast/api";
 import Parser from "rss-parser"
 import { usePromise } from "@raycast/utils";
-import { getBangumiInfo, getTodayBangumis } from "./bangumi";
+import { getBangumiInfo, getBangumiInfoFromAPI, getTodayBangumis } from "./bangumi";
+import { BGMAPIInfoItem } from "./types";
 
 export default function Command() {
   const { data, isLoading } = usePromise(getTodayBangumis, [], {})
@@ -21,10 +22,10 @@ export default function Command() {
 function BGMListItem(props: { item: Parser.Item, index: number }) {
   const bgmTitleList = (props.item.title || "No Title | No Title").split("｜");
   const bgmTitle = bgmTitleList[1];
-  const bgmId = -1;
+  var bgmId = -1;
   if (props.item.link) {
     const bgmUrl = new URL(props.item.link);
-    const bgmId = bgmUrl.pathname.split("/")[2];
+    bgmId = +bgmUrl.pathname.split("/")[2];
   }
   console.log(bgmTitle);
   
@@ -38,9 +39,27 @@ function BGMListItem(props: { item: Parser.Item, index: number }) {
 }
 
 function BGMDetailItem(props: { bgmId: number }) {
-  const { data, isLoading } = usePromise(getBangumiInfo, [props.bgmId], { execute: !!props.bgmId })
+  const { data, isLoading } = usePromise(getBangumiInfoFromAPI, [props.bgmId], { execute: !!props.bgmId })
+  const bgmData = data as BGMAPIInfoItem;
+  const markdown = `
+  # ${bgmData?.name_cn || bgmData?.name || "No Title"}
+  > Origin name: ${bgmData?.name || "No Title"}
+
+  ![](${bgmData?.images.small})
+  ## 简介
+  ${bgmData?.summary || ""}
+  `
   return (
-    <Detail markdown="**Hello** _World_!" />
+    <Detail
+      isLoading={isLoading} 
+    markdown={markdown} 
+    metadata = {
+      <Detail.Metadata>
+        <Detail.Metadata.Label title="放送平台" text={bgmData?.platform || ""}/>
+        <Detail.Metadata.Label title="放送时间" text={bgmData?.date || ""}/>
+        <Detail.Metadata.Label title="总集数" text={`${bgmData?.total_episodes || 0}`}/>
+      </Detail.Metadata>
+    }/>
   )
 }
 
