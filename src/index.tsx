@@ -19,16 +19,20 @@ export default function Command() {
 }
 
 function BGMListItem(props: { item: Parser.Item, index: number }) {
-  // console.log(props.item)
-  const bgmTitleList = (props.item.title || "No Title | No Title").split("|");
+  const bgmTitleList = (props.item.title || "No Title | No Title").split("｜");
   const bgmTitle = bgmTitleList[1];
-
+  const bgmId = -1;
+  if (props.item.link) {
+    const bgmUrl = new URL(props.item.link);
+    const bgmId = bgmUrl.pathname.split("/")[2];
+  }
+  console.log(bgmTitle);
+  
   return (
     <List.Item
-      title={bgmTitle || bgmTitle[0] || "No Title"}
-      // title = {props.item.title || "No Title"}
-      subtitle={props.item.pubDate}
-      actions={<Actions item={props.item} bgmId={0} />}
+      title={ bgmTitle || "No Title" }
+      subtitle={ props.item.pubDate || "No Date" }
+      actions={<Actions item={props.item} bgmId={bgmId} />}
     />
   );
 }
