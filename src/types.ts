@@ -6,6 +6,11 @@ export type CacheEntry = {
     items: Parser.Item[];
   };
 
+export type CacheAPIEntry = {
+    timestamp: number;
+    item: BGMToday;
+}
+
 export type CacheBGMEntry = {
     timestamp: number;
     item: BGMInfo
@@ -129,4 +134,63 @@ export interface BGMAPIInfoItem {
 type BGMInfo = {
     title: string;
     items: Parser.Item[];
+}
+
+interface Weekday {
+  en: string;
+  cn: string;
+  ja: string;
+  id: number;
+}
+
+interface RatingCount {
+  "1": number;
+  "2": number;
+  "3": number;
+  "4": number;
+  "5": number;
+  "6": number;
+  "7": number;
+  "8": number;
+  "9": number;
+  "10": number;
+}
+
+interface Rating {
+  total: number;
+  count: RatingCount;
+  score: number;
+}
+
+export interface BGMItem {
+  id: number;
+  url: string;
+  type: number;
+  name: string;
+  name_cn: string;
+  summary: string;
+  air_date: string;
+  air_weekday: number;
+  rating: Rating;
+  rank: number;
+  images: {
+    large: string;
+  };
+  collection: {
+    doing: number;
+    wish: number;
+    collect: number;
+    dropped: number;
+  };
+  eps: number;
+  type_name: string;
+}
+
+export interface BGMToday {
+  weekday: Weekday;
+  items: BGMItem[];
+}
+
+export interface BGMWeek {
+  items: BGMToday[];
 }
