@@ -1,14 +1,13 @@
-import { useEffect, useState } from "react";
 import { ActionPanel, Action, Detail, List } from "@raycast/api";
-import Parser from "rss-parser"
 import { usePromise } from "@raycast/utils";
-import { getBangumiInfo, getBangumiInfoFromAPI, getTodayBangumiAPI, getTodayBangumis } from "./bangumi";
-import { BGMAPIInfoItem, BGMItem, BGMToday, BGMWeek } from "./types";
+import { getBangumiEps, getBangumiInfoFromAPI, getTodayBangumiAPI } from "./bangumi";
+import { BGMAPIInfoItem, BGMItem, BGMToday, EpsData } from "./types";
 
 export default function Command() {
   // const { data, isLoading } = usePromise(getTodayBangumis, [], {})
   const { data, isLoading } = usePromise(getTodayBangumiAPI, [], {});
   const dataCalender = data as BGMToday;
+
   return (
     <List
       isLoading={isLoading}
@@ -38,11 +37,15 @@ function BGMListItem(props: { item: BGMItem, index: number }) {
 }
 
 function BGMDetailItem(props: { bgmId: number }) {
-  const { data, isLoading } = usePromise(getBangumiInfoFromAPI, [props.bgmId], { execute: !!props.bgmId })
+  const { data, isLoading } = usePromise(getBangumiInfoFromAPI, [props.bgmId], { execute: !!props.bgmId });
+  const { data: espDataRaw, isLoading: espLoading } = usePromise(getBangumiEps, [data], { execute: !!data });
+
   const bgmData = data as BGMAPIInfoItem;
+  const epsData = espDataRaw as EpsData;
+
   const markdown = `
   # ${bgmData?.name_cn || bgmData?.name || "No Title"}
-  > Origin name: ${bgmData?.name || "No Title"}
+  > ${bgmData?.name || "No Title"}
 
   ![](${bgmData?.images.small})
   ## 简介
@@ -50,7 +53,7 @@ function BGMDetailItem(props: { bgmId: number }) {
   `
   return (
     <Detail
-      isLoading={isLoading} 
+      isLoading={isLoading || espLoading} 
     markdown={markdown} 
     metadata = {
       <Detail.Metadata>
@@ -58,27 +61,37 @@ function BGMDetailItem(props: { bgmId: number }) {
         <Detail.Metadata.Label title="放送时间" text={bgmData?.date || ""}/>
         <Detail.Metadata.Label title="总集数" text={`${bgmData?.total_episodes || 0}`}/>
         <Detail.Metadata.Separator/>
+        {epsData?.data?.reverse().map(function (item, index) {
+          if (!item.name_cn && !item.name || !(item.type !== 0 && item.type !== 1)) {
+            return null
+          }
+          return <Detail.Metadata.Label key={index} title={item.airdate} text={item.name_cn || item.name || "Failed to get title"} />
+        }
+        )}
+        <Detail.Metadata.Separator/>
         <Detail.Metadata.Label title="评分" text={`${bgmData?.rating.score || 0}`}/>
         <Detail.Metadata.Label title="评分人数" text={`${bgmData?.rating.total || 0}`}/>
+        <Detail.Metadata.Separator/>
+        <Detail.Metadata.Label title="BGM ID" text={`${bgmData?.id || 0}`}/>
       </Detail.Metadata>
     }/>
   )
 }
 
 
-function Actions(props: { item: Parser.Item, bgmId: number }) {
+function Actions(props: { item: BGMItem, bgmId: number }) {
   return (
-    <ActionPanel title={props.item.title}>
+    <ActionPanel title={props.item.name_cn || props.item.name}>
       <ActionPanel.Section>
         {props.bgmId && <Action.Push title="Detail" target={<BGMDetailItem bgmId={props.bgmId} />} />}
       </ActionPanel.Section>
       <ActionPanel.Section>
-        {props.item.link && <Action.OpenInBrowser url={props.item.link} shortcut={{ modifiers: ['cmd'], key: 'enter' }} />}
+        {props.item.url && <Action.OpenInBrowser url={props.item.url} shortcut={{ modifiers: ['cmd'], key: 'enter' }} />}
       </ActionPanel.Section>
       <ActionPanel.Section>
-        {props.item.link && (
+        {props.item.url && (
           <Action.CopyToClipboard
-            content={props.item.link}
+            content={props.item.url}
             title="Copy Link"
             shortcut={{ modifiers: ["cmd"], key: "." }}
           />

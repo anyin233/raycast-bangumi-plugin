@@ -1,7 +1,7 @@
 import os from "node:os";
 import { Cache, environment } from "@raycast/api";
 import Parser from "rss-parser";
-import { BGMToday, BGMWeek, CacheAPIBGMEntry, CacheAPIEntry, CacheBGMEntry, CacheEntry } from "./types";
+import { BGMAPIInfoItem, BGMToday, BGMWeek, CacheAPIBGMEntry, CacheAPIEntry, CacheBGMEntry, CacheEntry, CacheEpsEntry } from "./types";
 import axios from "axios";
 
 const CACHE_DURATION_IN_MS = 10 * 60 * 1_000;
@@ -100,4 +100,28 @@ export async function getBangumiInfoFromAPI(id: number) {
   const data = await axios.get(`https://api.bgm.tv/v0/subjects/${id}`, {headers})
   cache.set(`BGMItemAPI_${id}`, JSON.stringify({timestamp: Date.now(), item: data.data}));
   return data.data
+}
+
+export async function getBangumiEps(bgmData: BGMAPIInfoItem) {
+  const params = {
+    subject_id: bgmData.id,
+    limit: 36,
+    offset: bgmData.total_episodes - 36 > 0 ? bgmData.total_episodes - 36 : 0,
+  }
+  const cachedResponse = cache.get(`BGMEpsAPI_${bgmData.id}`)
+  if (cachedResponse) {
+    const parsed: CacheEpsEntry = JSON.parse(cachedResponse);
+
+    const elapsed = Date.now() - parsed.timestamp;
+    console.log(`BGMEpsAPI_${bgmData.id} cache age: ${elapsed / 1000} seconds`);
+
+    if (elapsed <= CACHE_DURATION_IN_MS) {
+        return parsed.item;
+    } else {
+      console.log(`Cache expired for BGMEpsAPI_${bgmData.id}`);
+    }
+  }
+  const data = await axios.get(`https://api.bgm.tv/v0/episodes`, {headers, params});
+  cache.set(`BGMEpsAPI_${bgmData.id}`, JSON.stringify({timestamp: Date.now(), item: data.data}));
+  return data.data;
 }

@@ -194,3 +194,28 @@ export interface BGMToday {
 export interface BGMWeek {
   items: BGMToday[];
 }
+
+interface Episode {
+  airdate: string;
+  name: string;
+  name_cn: string;
+  duration: string;
+  desc: string;
+  ep: number;
+  sort: number;
+  id: number;
+  subject_id: number;
+  comment: number;
+  type: number;
+  disc: number;
+  duration_seconds: number;
+}
+
+export interface EpsData {
+  data?: Episode[];
+}
+
+export interface CacheEpsEntry {
+  timestamp: number;
+  item: EpsData;
+}
